@@ -1,0 +1,168 @@
+##Day 1
+-created app and public directories;
+
+*public
+-will be the front of our app
+-will have the main index.php file 
+-will have the static assets (JS/CSS/Images)
+-everything will be routed through the index.php file;
+
+*app
+-will have the entire app
+-will hold the mvc structure
+-will have the libraries, config file, helpers, controllers, models, views, etc..
+
+
+*inside public
+-created index.php file in public directory;
+-created a css, a js  and an img directory;
+-created a main.css and an app.js inside respective directories;
+*when the view will be created, these files will be included in it;
+
+*inside app
+-created the 'libraries' directory (this is like the heart of the app, we'll have several files here);
+###explanations to be added later;
+-created the Core.php inside the 'libraries';
+#Core.php (it will take care of looking at the URLs and pulling out what needs to be 
+pulled out);
+
+
+##Day 2
+
+#inside 'libraries'
+-created a Database.php file (this will be the PDO class);
+#it will include a cpl methods to select from the DB to insert or update entries, to count (rows for instance)
+the model will use this file (as it interacts with the data);
+
+-created a file called Controller.php (this will be the controller class)
+#this will make it so that we can load models and views from other controllers 
+(every controller we'll create will extend this class);
+
+
+#inside 'app'
+-created the MVC structure 
+#create a directory called models, 1 called views and 1 called controllers
+
+-created the 'helpers' directory (inside the app directory)
+-created a config directory in the app dir (DB params will be here)
+-create a bootstrap file called bootstrap.php (it will require all the other necessary files meaning the libraries, the config file, the helpers, etc..)
+
+### this is the app structure;
+
+
+##Day 3
+
+*will make it so that the 'app' directory cannot be accessed anymore if we go to  'localhost/phpblog'
+-created a .htaccess file inside the 'app' directory (created it from VS code, it won't work creating them from windows);
+*will make it so that we can't see the 'app' directory in the browser
+-add the following code inside the .htaccess file in the 'app'directory (it will deny access to any directory that does not have
+an index.php file);
+Options -Indexes
+*Note *if we do +Indexes in the .htaccess fike, it will let me open the app directory;
+
+
+*will make it so that everything routs through the index.php file in the 'app' directory
+*will use modrewrite (a php modules that allows us to re-write urls)
+*Note *if we go to: http://localhost/phpblog/public/test, we get an error : "Object not found"
+-created a new .httaccess file in the 'public' directory;
+*.htaccess is a file with apache directives
+*paste in it:
+
+<IfModule mod_rewrite.c>
+  Options -Multiviews
+  RewriteEngine On
+  RewriteBase /phpblog/public
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule  ^(.+)$ index.php?url=$1 [QSA,L]
+</IfModule>
+
+*the code above does the following:
+  *1st line checks to see if mod_rewrite module is enabled (usually it is by default e.g. with xampp,
+same for hosting companies that allow clients to use php);
+  *Multiviews will be disabled (see the - sign), it will make sure there are no confusions when using
+  /test or /test.php
+  *RewriteEngine On (starts the rewrite)  
+  *RewriteBase is the base url where all calls will be redirected (the root directory should be here)
+  *next two lines check if the file requested is created, if it's not, it will rerout through index.php
+  *note that there's a url param after the index.php in the redirect link:   RewriteRule  ^(.+)$ index.php?url=$1 [QSA,L]
+  *the ?url=$1 means we can do http://localhost/traversymvc/public/posts ('/posts') instead of 'url=posts'
+  *now if we go to: http://localhost/traversymvc/public/test, we don't get the error anymore, but we get redirected to index.php
+#the only case we won't get redirected is if there actually is a test.php file in there;
+
+*since index.php is the app entry point, will need to require other folders through it (will put all the required folders in the
+bootsrap.php and then require the bootstrap.php in the index;
+-required bootstrap.php inside index.php (require_once '../app/bootstrap.php';
+
+
+*at this moment, if we go to localhost/phpblog, we get to see the 2 directories (app and public), we don't want that;
+* we don t want that (we want 'localhost/phpblog' to go directly to the public directory);
+-created 1 more .htaccess file in the root directory (alongside the 'app' and 'public' directories);
+*paste code in it:
+<IfModule mod_rewrite.c>
+  RewriteEngine on
+  RewriteRule ^$ public/ [L]
+  RewriteRule (.*) public/$1 [L]
+</IfModule>
+*now if we go to: localhost/phpblog or localhost/phpblog/public, we actually 
+get redirected to index.php which will render the content in bootstrap.php;
+
+-imported the 3 libraries in the bootstrap.php (Core, Controller, Database):
+*
+  require_once 'libraries/core.php';
+  require_once 'libraries/controller.php';
+  require_once 'libraries/database.php';
+ *note libraries are required with lowercase (although they are defined with uppercase)
+-defined the Core class inside the Core.php library:
+
+*code:
+class Core{
+	//define protected properties and set them to values
+	protected $currentController = 'Pages';
+	protected $currentMethod = 'index';
+	protected $params = [];
+
+	//define a constructor which will get the url (will call the getUrl() function)
+	 public function __construct(){
+    		$this->getUrl();		
+  	}
+
+	//define the getUrl() function
+	 public function getUrl(){
+   		 //the GET superglobal can fetch params from the url
+   		 echo $_GET['url'];
+  	}
+}
+
+*the default controller of the app will be 'Pages' (if we go to localhost/phpblog, the Pages controller will be loaded)
+*default method of each controlelr will be index();
+*the parameters will be an array (empty by default);
+
+*the getUrl() method fetches the URL params and puts them into an array;
+
+-created a constructor function in the Core class, above the getUrl() method;
+*code:
+//define a constructor which will get the url (will call the getUrl() function)
+	 public function __construct(){
+    		$this->getUrl();		
+  	}
+
+
+-instantiated the Core class in the index.php
+*(the constructor needs to run in order for getUrl() function to run
+and the constructor runs when an object of its class is instantiated
+*code:
+
+//init core library
+  $init = new Core;
+
+*now if I go to localhost/phpblog/test, 'test' gets echoed, if I add/test/test2, the 2 words get echoed out;
+
+
+
+
+
+
+
+
+######Keep from notes set 16
