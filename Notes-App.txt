@@ -1,4 +1,5 @@
-##Day 1
+##Day 1 (created main directories + inner sub-directories for each of them)
+
 -created app and public directories;
 
 *public
@@ -10,7 +11,7 @@
 *app
 -will have the entire app
 -will hold the mvc structure
--will have the libraries, config file, helpers, controllers, models, views, etc..
+-will have the libraries, the config file, the helpers, + the MVC structure (controllers, models, views, etc..)
 
 
 *inside public
@@ -24,10 +25,11 @@
 ###explanations to be added later;
 -created the Core.php inside the 'libraries';
 #Core.php (it will take care of looking at the URLs and pulling out what needs to be 
-pulled out);
+pulled out/accessing specific elements of the app based on the URL params);
 
 
-##Day 2
+##Day 2 (Created the Database library, the main Controller Class, the MVC structure in the app directory, the config directory,
+the bootstrap file and the helpers directory)
 
 #inside 'libraries'
 -created a Database.php file (this will be the PDO class);
@@ -50,7 +52,10 @@ the model will use this file (as it interacts with the data);
 ### this is the app structure;
 
 
-##Day 3
+##Day 3 (made it so that we can't see the 'app' directory in the browser, and routed everything in public directory 
+through index.php, created the .htaccess files (3 of them: 1 inside the app directory, 1 inside the public directory and 1 inside the root 
+directory outside of both app and public)
+
 
 *will make it so that the 'app' directory cannot be accessed anymore if we go to  'localhost/phpblog'
 -created a .htaccess file inside the 'app' directory (created it from VS code, it won't work creating them from windows);
@@ -160,9 +165,135 @@ and the constructor runs when an object of its class is instantiated
 
 
 
+##Day 4 (continued working on the Core Controller class which so far can only fetch params from the URL and echo them/
+
+-opened Core.php
+*note that currently if we go to localhost/phpblog, we get an error;
+-will check if the URL param is set:
+	
+	//if param is set
+	 if(isset($_GET['url'])){
+		//set a $url variable and strip the '/' char after it if there is any '/' char
+		$url = rtrim($_GET['url'], '/');
+
+		//sanitize the URL (remove any chars that should not be in a url) with FILTER_SANITIZE_URL;
+		$url = filter_var($url, FILTER_SANITIZE_URL);
+		//split the $URL parameter by '/';
+		$url = explode('/', $url);
+		//return the $url	
+		return $url;
+	}
+
+-set the $url in the constructor to the getUrl() method execution:
+
+		public function __construct(){
+				//print_r($this->getUrl());		
+				
+				$url = $this->getUrl();
+  			}
+
+-check in the controllers directory to see if there is any controller with the name of the 1st URL param:
+*check for the 0 index of the $url var -> $url[0], capitalize that param ucwords($url[0]) because that's how the Controllers will be 
+defined and add .php after it (also note the path is ../app/controllers and not ../controllers because we are not in the Core.php file but 
+in the index.php in the public file -as we are always routed through here due to the .htaccess files:
+
+	 public function __construct(){
+				//print_r($this->getUrl());		
+				$url = $this->getUrl();
+				//check in the controllers for the first param of the url (to see if there is any controller with the name of that param)
+				if(file_exists('../app/controllers/' . ucwords($url[0]). '.php')){
+						
+				}
+  	}
+
+-if the file exists, set it as the current controller and overwrite the default (which is Pages controller) and unset() the 0 
+index of the url params:
+
+ public function __construct(){
+				//print_r($this->getUrl());		
+				$url = $this->getUrl();
+				//check in the controllers for the first param of the url (to see if there is any controller with the name of that param)
+				if(file_exists('../app/controllers/' . ucwords($url[0]). '.php')){
+					//set as the param as the current controller
+						$this->currentController = ucwords($url[0]);
+						//unset 0 index of the URL params
+						unset($url[0]);
+						}
+  				}
 
 
 
 
 
-######Keep from notes set 16
+##Day 5 (keep working on the Controller class -> mapping methods and params of it)
+
+
+-required the currentController in the constructor function of the Core class and instantiated it:
+public function __construct(){
+				//print_r($this->getUrl());		
+				
+				$url = $this->getUrl();
+
+				//check in the controllers for the first param of the url (to see if there is any controller with the name of that param)
+				if(file_exists('../app/controllers/' . ucwords($url[0]). '.php')){
+						//set as the param as the current controller
+						$this->currentController = ucwords($url[0]);
+						//unset 0 index of the URL params
+						unset($url[0]);
+				}
+
+				//require the controller 
+				require_once('../app/controllers/' . $this->currentController . '.php');
+
+				//instantiate the controller
+				$this->currentController = new $this->currentController;
+  	               }
+
+-created the Pages controller in the controllers directory;
+-tested (in the Pages controller I echoed out in the constructor "pages loaded" and if I go to localhost/phpblog, I get to see 'pages
+loaded' because that is the default currentController;
+*same if I go to localhost/phpblog/test (as there's no 'test' controller);
+
+
+
+-made it so that if we go to Pages/about (or w/e controller) the constructor in the Core class will check for the method of the url[1] 
+index(if  that's about for instance, it will check for an about() method in the controller  - in the current Controller);
+*for instance if I go to Pages/about it will check for an about() method in the Pages controller:
+
+	 public function __construct(){
+				//print_r($this->getUrl());		
+				
+				$url = $this->getUrl();
+
+				//check in the controllers for the first param of the url (to see if there is any controller with the name of that param)
+				if(file_exists('../app/controllers/' . ucwords($url[0]). '.php')){
+						//set as the param as the current controller
+						$this->currentController = ucwords($url[0]);
+						//unset 0 index of the URL params
+						unset($url[0]);
+				}
+
+				//require the controller 
+				require_once('../app/controllers/' . $this->currentController . '.php');
+
+				//instantiate the controller
+				$this->currentController = new $this->currentController;
+
+				//check for second part of url (for param[1] index)
+				if(isset($url[1])){
+						//check to see if method exists in controller
+						if(method_exists($this->currentController, $url[1])){
+							$this->currentMethod = $url[1];
+
+							//unset 1 index
+                                                        unset($url[1]);
+						}
+				}
+
+				echo $this->currentMethod;
+  		}
+
+-
+
+
+######Keep from video 18
